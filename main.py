@@ -3,8 +3,8 @@ from datetime import *
 from pydantic import BaseModel
 import random
 import uvicorn
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+#from fastapi.encoders import jsonable_encoder
+#from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -33,14 +33,10 @@ async def root(item: InvoiceItem):
     
     if item.nit and item.direction and item.date and item.currency and item.type and item.products:
         if len(item.nit) == 8:
-            t1 = _randN(20)
-            t2 = _randN(16)
-            t3 = datetime.today()
-            t4 = len(item.products)
-            print(str(t3))
-            return_data = InvoiceDocs(DTE=t1, Autorization=t2, datetime=t3, itms=t4)
-            json_compatible_item_data = jsonable_encoder(return_data)
-            return JSONResponse(content=json_compatible_item_data)
+            certifier_data = InvoiceDocs(DTE=_randN(20), Autorization=_randN(16), datetime=datetime.today(), itms=len(item.products))
+            return certifier_data
+            #json_compatible_item_data = jsonable_encoder(return_data)
+            #return JSONResponse(content=json_compatible_item_data)
         else:
              raise HTTPException(status_code=404, detail="Invalid NIT")
     else:
