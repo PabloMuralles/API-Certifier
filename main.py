@@ -10,16 +10,19 @@ app = FastAPI()
 
 class InvoiceItem(BaseModel):
     nit: str 
-    direction: str 
-    date: date
-    currency: str
-    type: str
+    name: str 
+    address: str
+    date_invoice: date
     products: dict = {}
+    currency: str
 
 class InvoiceDocs(BaseModel):
-    DTE: str
+
     Autorization: str
-    datetime: datetime
+    serial: str
+    DTE: str
+    invoice_date: datetime
+    certification_date: datetime
     itms: int
 
 def _randN(N):
@@ -31,9 +34,9 @@ def _randN(N):
 @app.post("/")
 async def root(item: InvoiceItem):
     
-    if item.nit and item.direction and item.date and item.currency and item.type and item.products:
-        if len(item.nit) == 8:
-            certifier_data = InvoiceDocs(DTE=_randN(20), Autorization=_randN(16), datetime=datetime.today(), itms=len(item.products))
+    if item.nit and item.name and item.address and item.date_invoice and item.products and item.currency:
+        if len(item.nit) >= 8:
+            certifier_data = InvoiceDocs(Autorization=_randN(36), serial=_randN(8), DTE=_randN(10), invoice_date=datetime.today(), certification_date=datetime.today(), itms=len(item.products))
             return certifier_data
             #json_compatible_item_data = jsonable_encoder(return_data)
             #return JSONResponse(content=json_compatible_item_data)
