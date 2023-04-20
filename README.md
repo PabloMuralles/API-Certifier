@@ -1,2 +1,5 @@
-# API-Certifier
-API simulation of a Certifier
+# QR GENERATOR
+
+Need to intall
+
+pip install qrcode
