@@ -18,7 +18,7 @@ class InvoiceItem(BaseModel):
 
 class InvoiceDocs(BaseModel):
 
-    Autorization: str
+    authorization: str
     serial: str
     DTE: str
     invoice_date: datetime
@@ -36,7 +36,7 @@ async def root(item: InvoiceItem):
     
     if item.nit and item.name and item.address and item.date_invoice and item.products and item.currency:
         if len(item.nit) >= 8:
-            certifier_data = InvoiceDocs(Autorization=_randN(36), serial=_randN(8), DTE=_randN(10), invoice_date=datetime.today(), certification_date=datetime.today(), itms=len(item.products))
+            certifier_data = InvoiceDocs(authorization=_randN(36), serial=_randN(8), DTE=_randN(10), invoice_date=datetime.today(), certification_date=datetime.today(), itms=len(item.products))
             return certifier_data
             #json_compatible_item_data = jsonable_encoder(return_data)
             #return JSONResponse(content=json_compatible_item_data)
