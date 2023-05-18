@@ -17,7 +17,6 @@ class InvoiceItem(BaseModel):
     currency: str
 
 class InvoiceDocs(BaseModel):
-
     authorization: str
     serial: str
     DTE: str
@@ -31,9 +30,8 @@ def _randN(N):
 	return str(random.randint(min, max))
 
 # fastapi automatically transform the dictionary to a json
-@app.post("/")
+@app.post("/confirm/")
 async def root(item: InvoiceItem):
-    
     if item.nit and item.name and item.address and item.date_invoice and item.products and item.currency:
         if len(item.nit) >= 8:
             certifier_data = InvoiceDocs(authorization=_randN(36), serial=_randN(8), DTE=_randN(10), invoice_date=datetime.today(), certification_date=datetime.today(), itms=len(item.products))
@@ -41,9 +39,21 @@ async def root(item: InvoiceItem):
             #json_compatible_item_data = jsonable_encoder(return_data)
             #return JSONResponse(content=json_compatible_item_data)
         else:
-             raise HTTPException(status_code=404, detail="Invalid NIT")
+            raise HTTPException(status_code=404, detail="Invalid NIT")
     else:
         raise HTTPException(status_code=404, detail="Mising Data")
     
+@app.post("/annul/")
+async def root(item: InvoiceDocs):
+    if item.authorization and item.serial and item.DTE and item.invoice_date and item.certification_date and item.itms:
+        delta_days = item.certification_date.date() - date.today()
+        delta_days = delta_days.days
+        if (0 >= delta_days <= 30):
+            return {"date": f"{datetime.today()}"}
+        else:
+           raise HTTPException(status_code=404, detail="The date exceeds 30 days")
+    else:
+        raise HTTPException(status_code=404, detail="Mising Data")
+     
 if __name__ == "__main__":
-     uvicorn.run(app,host="0.0.0.0", port=8000)
+    uvicorn.run(app,host="0.0.0.0", port=8000)
