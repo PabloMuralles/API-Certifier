@@ -55,3 +55,18 @@ but if you want to create the file you can use
 
     pip freeze > requirements.txt
 
+# How to create the secret key
+
+you have to run the follow command, but if you are on WINDOWS you have to download the OPENSSL on your system
+
+    openssl rand -hex 32
+
+On windows after install openssl you have to add the environment variable, so press windows + R wirte 
+
+    sysdm.cpl
+
+then go to environment variable then select path and add 
+
+    C:\Program Files\OpenSSL-Win64\bin
+
+
