@@ -70,6 +70,29 @@ def _create_token(data: dict, time_expire: Union[datetime, None] = None):
     token_jwt = jwt.encode(data_copy, key=SECRET_KEY, algorithm=ALGORITHM)
     return token_jwt
 
+# validate the token and user 
+def _get_user_current(token: str = Depends(oauth2_scheme)):
+    try:
+        token_decode = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
+        user_name = token_decode.get("sub")
+        if user_name == None:
+            raise HTTPException(status_code=401, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
+
+    #validate if the user exist in the db
+    user = _get_user(fake_users_db, user_name)
+    if not user:
+        raise HTTPException(status_code=401, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
+    return user
+
+# validate if the token is valid 
+def _get_user_disable_current(user: User = Depends(_get_user_current)):
+    if user.disable:
+        raise HTTPException(status_code=400, detail="Inactive User")
+    return user
+
+
 
 # @app.get("/")
 # def root():
@@ -78,8 +101,8 @@ def _create_token(data: dict, time_expire: Union[datetime, None] = None):
 # depends is a injection of dependence, this make that execute a function when we enter to this route
 # el oauth2_scheme it the thing that help us to make private the endpoint
 @app.get("/user/me")
-def user(token: str = Depends(oauth2_scheme)):
-    return token
+def user(user: User = Depends(_get_user_disable_current)):
+    return user
  
 # this endpoint is te first steps to authenticate the user to use the api then pase to the endpoint user/me
 @app.post("/token")
