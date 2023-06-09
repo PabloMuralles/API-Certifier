@@ -5,6 +5,7 @@ from typing import Union
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
+import uvicorn
 
 fake_users_db = {
     "johndoe": {
@@ -30,6 +31,8 @@ SECRET_KEY = "2e49ada461a1c1b9d416a1dcd7be8d7bdca40996c8a1c334b616f209d03c0ea6"
 # algorithm to encrypts and JWT function correct, it's important to mention that JWT it not for encryption it's for tokens.
 # JWT create a signature to ensure that our server it's our server no other server
 ALGORITHM = "HS256"
+# Time that live the token
+ACCESS_TOKEN_EXPIRE_MINUTES = 1
 
 # Union[str, None] = None this means that the attribute can be string or null and for default we initialize null
 class User(BaseModel):
@@ -93,11 +96,6 @@ def _get_user_disable_current(user: User = Depends(_get_user_current)):
     return user
 
 
-
-# @app.get("/")
-# def root():
-#         return "Hello"
-
 # depends is a injection of dependence, this make that execute a function when we enter to this route
 # el oauth2_scheme it the thing that help us to make private the endpoint
 @app.get("/user/me")
@@ -105,13 +103,16 @@ def user(user: User = Depends(_get_user_disable_current)):
     return user
  
 # this endpoint is te first steps to authenticate the user to use the api then pase to the endpoint user/me
+# in this route we have to send the user and password to make te validation to the api
 @app.post("/token")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = _authenticate_user(fake_users_db, form_data.username, form_data.password )
-    access_token_expires = timedelta(minutes=30)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token_jwt = _create_token({"sub": user.username}, access_token_expires) # sub is part of oauth for the system that use JWT, it's no obligatory but it better practice. Indicates the identity of an entity in this case the user
     return {
         "access_token": access_token_jwt,
         "token_type": "bearer"
     }
 
+if __name__ == "__main__":
+    uvicorn.run(app,host="0.0.0.0", port=8000)
