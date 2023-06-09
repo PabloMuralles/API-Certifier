@@ -69,4 +69,10 @@ then go to environment variable then select path and add
 
     C:\Program Files\OpenSSL-Win64\bin
 
+# How to try and decode your JWT token
+
+    https://jwt.io/
+
+And go to the debugger option
+
 

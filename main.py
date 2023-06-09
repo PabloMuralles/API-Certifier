@@ -1,15 +1,18 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Body, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from typing import Union
+from typing import Union, Annotated
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from jose import jwt, JWTError
 import uvicorn
+import random
+ 
+ 
 
 fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
+    "pablo": {
+        "username": "pablo",
         "full_name": "John Doe",
         "email": "johndoe@example.com",
         "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
@@ -18,6 +21,33 @@ fake_users_db = {
 }
 
 app = FastAPI()
+
+# region ----- API Business Logic
+
+class InvoiceItem(BaseModel):
+    nit: str 
+    name: str 
+    address: str
+    date_invoice: date
+    products: dict = {}
+    currency: str
+
+class InvoiceDocs(BaseModel):
+    authorization: str
+    serial: str
+    DTE: str
+    invoice_date: datetime
+    certification_date: datetime
+    qty_products: int
+
+def _randN(N):
+	min = pow(10, N-1)
+	max = pow(10, N) - 1
+	return str(random.randint(min, max))
+
+# endregion
+
+#region ----- API JWT
 
 # I don't understand well but this is to access to the token of the route "/token"
 oauth2_scheme = OAuth2PasswordBearer("/token")
@@ -32,7 +62,7 @@ SECRET_KEY = "2e49ada461a1c1b9d416a1dcd7be8d7bdca40996c8a1c334b616f209d03c0ea6"
 # JWT create a signature to ensure that our server it's our server no other server
 ALGORITHM = "HS256"
 # Time that live the token
-ACCESS_TOKEN_EXPIRE_MINUTES = 1
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Union[str, None] = None this means that the attribute can be string or null and for default we initialize null
 class User(BaseModel):
@@ -73,7 +103,7 @@ def _create_token(data: dict, time_expire: Union[datetime, None] = None):
     token_jwt = jwt.encode(data_copy, key=SECRET_KEY, algorithm=ALGORITHM)
     return token_jwt
 
-# validate the token and user 
+# validate the token and user, and with tis decode automatically check the expiration time of the token 
 def _get_user_current(token: str = Depends(oauth2_scheme)):
     try:
         token_decode = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
@@ -113,6 +143,38 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         "access_token": access_token_jwt,
         "token_type": "bearer"
     }
+
+#endregion
+
+#region ----- API Business Logic
+
+#fastapi automatically transform the dictionary to a json    UserInDB(**user_data) importance: Annotated[int, Body()
+@app.post("/confirm")
+async def confirm_invoice(user: User = Depends(_get_user_disable_current), items: InvoiceItem = Body(embed=True)):
+    if items.nit and items.name and items.address and items.date_invoice and items.products and items.currency:
+        if len(items.nit) >= 8:
+            certifier_data = InvoiceDocs(authorization=_randN(36), serial=_randN(8), DTE=_randN(10), invoice_date=datetime.today(), certification_date=datetime.today(), qty_products=len(items.products))
+            return certifier_data
+            #json_compatible_item_data = jsonable_encoder(return_data)
+            #return JSONResponse(content=json_compatible_item_data)
+        else:
+            raise HTTPException(status_code=404, detail="Invalid NIT")
+    else:
+        raise HTTPException(status_code=404, detail="Missing Data")
+    
+@app.post("/annul")
+async def annul_invoice(user: User = Depends(_get_user_disable_current), items: InvoiceDocs= Body(embed=True)):
+    if items.authorization and items.serial and items.DTE and items.invoice_date and items.certification_date and items.qty_products:
+        delta_days = items.certification_date.date() - date.today()
+        delta_days = delta_days.days
+        if (0 >= delta_days <= 30):
+            return {"date": f"{datetime.today()}"}
+        else:
+           raise HTTPException(status_code=404, detail="The date exceeds 30 days")
+    else:
+        raise HTTPException(status_code=404, detail="Missing Data")
+    
+#endregion
 
 if __name__ == "__main__":
     uvicorn.run(app,host="0.0.0.0", port=8000)
