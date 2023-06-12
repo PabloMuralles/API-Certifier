@@ -1,5 +1,12 @@
+ 
 # API-Certifier
 API simulation of a Certifier
+
+ 
+# QR GENERATOR
+Need to install
+
+    pip install qr code
 
 # How to connect to the API Example
     import requests
@@ -75,4 +82,4 @@ then go to environment variable then select path and add
 
 And go to the debugger option
 
-
+ 
