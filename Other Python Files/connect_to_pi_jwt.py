@@ -1,6 +1,8 @@
  
 import requests
 import json
+import jwt
+import time
 
 
 url = "http://localhost:8000/token"
@@ -12,9 +14,20 @@ url = "http://localhost:8000/token"
 
 response = requests.post(url=url, data={"username": "pablo", "password": "secret", "grant_type": "password"},
                            headers={"content-type": "application/x-www-form-urlencoded"})
-
+ 
 
 jwt_token = json.loads(response.text)["access_token"]
+
+
+# region ---- verify the expiration time 
+claims = jwt.decode(jwt_token,verify=False, options={'verify_signature': False} )
+exp = claims['exp']
+
+if time.time() > exp:
+    print("Hola")
+
+# endregion
+ 
 
 
 headers = {'Authorization': "Bearer {}".format(jwt_token)}
